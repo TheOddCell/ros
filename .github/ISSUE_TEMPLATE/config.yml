@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: stuff i wont add
+    url: https://github.com/TheOddCell/ros/blob/main/README.md#nope
+    about: please dont make this complicated
