@@ -5,6 +5,8 @@ best explanation: reverse nix (binaries only, not reproducable at all, no old ve
 
 install with `sh -c "$(curl -fsSL https://ba.sh/vzFm)" selfinstall`.
 
+note: https://files.obsidianos.xyz/~odd/static/ros and https://files.obsidianos.xyz/~odd/static/= directly fetch from this repository using a redirect.
+
 ## nope
 1. versioning
 2. more than binaries and scripts
