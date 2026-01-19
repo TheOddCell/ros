@@ -1,0 +1,182 @@
+#!/bin/sh
+set -o errexit
+# === Ros.. manages ros. ===
+if [ -f "/bin/ros" ] || [ -f "/usr/bin/ros" ]; then
+  echo "ros: WARNING: ros is not managed by itself."
+  echo "ros: WARNING: fix by running: `ros ip ros` as root,"
+  echo "ros: WARNING: and uninstalling ros from your package manager,"
+  echo "ros: WARNING: else ros may not update correctly."
+fi
+
+# === Self-install mode ===
+if [ -z "$0" ] || [ "$0" = "selfinstall" ]; then
+  echo 'ros: installing'
+  echo 'ros: install: creating ~/.odd/bin for ros and installed packages'
+  mkdir -p "$HOME/.odd/bin"
+  echo 'ros: install: creating ~/.odd/static for the cache'
+  mkdir -p "$HOME/.odd/static"
+  echo 'ros: install: downloading ros'
+  curl -fsSL "https://files.obsidianos.xyz/~odd/static/ros" -o "$HOME/.odd/static/ros"
+  chmod u+x "$HOME/.odd/static/ros"
+  echo 'ros: install: installing ros'
+  cp "$HOME/.odd/static/ros" "$HOME/.odd/bin/ros"
+  chmod u+x "$HOME/.odd/bin/ros"
+  echo 'ros: install: installing ='
+  "$HOME/.odd/bin/ros" i '='
+  echo 'ros: install: done'
+  echo '[warn] ros: install: please add $HOME/.odd/bin/ to $PATH' >&2
+  exit 0
+fi
+
+# === Just in case it gets removed ===
+mkdir -p "$HOME/.odd/bin"
+mkdir -p "$HOME/.odd/static"
+mkdir -p "$HOME/.odd/ros/pkgs"
+
+curlz() {
+  file="$1"
+  shift
+  if [ -f "$file" ]; then
+    curl -fL -z "$file" -o "$file" "$@"
+  else
+    curl -fL -o "$file" "$@"
+  fi
+}
+
+# === Syntax check helper ===
+badsyntaxcheck() {
+  if [ -z "$1" ]; then
+    echo "ros: bad syntax"
+    echo "ros - run odd static"
+    echo " - ros d  - download executable to cache"
+    echo " - ros rc - run cached executable"
+    echo " - ros r  - download and run executable"
+    echo " - ros i  - download and install executable to ~/.odd/bin"
+    echo " - ros it - download and install tar to ~/.odd/ros/pkgs"
+    echo " - ros ip - download and install executable to /usr/local/bin"
+    echo " - ros u  - remove executable from ~/.odd/bin"
+    echo " - ros ut - remove tar from ~/.odd/ros/pkgs"
+    echo " - ros up - remove executable from /usr/local/bin"
+    echo " - ros z  - update all applications in ~/.odd/bin"
+    echo " - ros zp - update all applications in /usr/local/bin"
+    echo " - ros l  - list cached applications"
+    echo " - ros li - list installed applications"
+    echo " - ros lp - list installed system wide applications"
+    echo " - ros la - list available applications"
+    echo " - ros gc - clean cache"
+    exit 1
+  fi
+}
+
+# === Arguments ===
+SUBCMD="$1"
+
+# Only shift if there is at least one argument
+if [ $# -gt 0 ]; then
+  shift
+fi
+
+# Only assign NAME/URL if at least one argument remains
+if [ $# -gt 0 ]; then
+  NAME="$(basename "$1")"
+  URL="$1"
+  if [ $# -gt 0 ]; then
+    shift
+  fi
+else
+  NAME=""
+  URL=""
+fi
+
+# Default URL if not explicitly provided
+if [ -z "$URL" ] || [ "$NAME" = "$URL" ]; then
+  URL="https://files.obsidianos.xyz/~odd/static/$NAME"
+fi
+
+CACHE="$HOME/.odd/static/$NAME"
+LOCAL_BIN="$HOME/.odd/bin/$NAME"
+NOT_SO_LOCAL_BIN="/usr/local/bin/$NAME"
+
+# === Main subcommand logic ===
+case "$SUBCMD" in
+  d)  # Download to cache
+    badsyntaxcheck "$NAME"
+    curlz "$CACHE" "$URL" -sS
+    chmod u+x "$CACHE"
+    ;;
+  rc) # Run cached
+    badsyntaxcheck "$NAME"
+    exec "$CACHE" "$@"
+    ;;
+  r) # Download and run
+    badsyntaxcheck "$NAME"
+    "$0" d "$NAME"  # download
+    exec "$0" rc "$NAME" "$@"
+    ;;
+  i)  # Install to ~/.odd/bin
+    badsyntaxcheck "$NAME"
+    "$0" d "$NAME"  # download
+    cp "$CACHE" "$LOCAL_BIN"
+    chmod u+x "$LOCAL_BIN"
+    ;;
+  it)  # Install tar to ~/.odd/ros/pkgs/$NAME
+    badsyntaxcheck "h$NAME"
+    mkdir -p "$HOME/.odd/ros/pkgs/$NAME"
+    curlz "$HOME/.odd/ros/pkgs/$NAME.tar.xz" "$URL.tar.xz"  # download
+    tar -xvf "$HOME/.odd/ros/pkgs/$NAME.tar.xz" -C "$HOME/.odd/ros/pkgs/$NAME"
+    chmod u+x -R "$HOME/.odd/ros/pkgs/$NAME/"
+    rm "$HOME/.odd/ros/pkgs/$NAME.tar.xz"
+    echo "Please add $HOME/.odd/ros/pkgs/$NAME to your "'$PATH'
+    ;;
+  ip)  # Install to /usr/local/bin
+    mkdir -p /usr/local/bin
+    badsyntaxcheck "$NAME"
+    "$0" d "$NAME"  # download
+    cp "$CACHE" "$NOT_SO_LOCAL_BIN"
+    chmod u+x "$NOT_SO_LOCAL_BIN"
+    ;;
+  u)  # Uninstall
+    badsyntaxcheck "$NAME"
+    rm -f "$LOCAL_BIN"
+    ;;
+  ut)  # Uninstall tar from ~/.odd/ros/pkgs/$NAME
+    badsyntaxcheck "$NAME"
+    rm -rf "$HOME/.odd/ros/pkgs/$NAME"
+    echo "Please remove $HOME/.odd/ros/pkgs/$NAME from your "'$PATH'
+    ;;
+  up)  # Uninstall from /usr/local/bin
+    mkdir -p /usr/local/bin
+    badsyntaxcheck "$NAME"
+    rm -f "$NOT_SO_LOCAL_BIN"
+    ;;
+  z) # Update all ~/.odd/bin
+    for i in $(ls "$HOME/.odd/bin"); do
+      "$0" i "$i"
+    done
+    ;;
+  zp) # Update all /usr/local/bin
+    for i in $(ls "/usr/local/bin"); do
+      "$0" ip "$i"
+    done
+    ;;
+  l)  # List cached
+    ls "$HOME/.odd/static/"
+    ;;
+  li) # List installed
+    ls "$HOME/.odd/bin/"
+    ;;
+  lp) # List installed system wide
+    ls "/usr/local/bin"
+    ;;
+  la) # List available online
+    curl -s https://files.obsidianos.xyz/~odd/static/api.php
+    ;;
+  gc) # garbage collect
+    rm -rf "$HOME/.odd/static/"
+    mkdir -p "$HOME/.odd/static"
+  ;;
+  *)  # fallback
+    badsyntaxcheck
+    exit 1
+    ;;
+esac

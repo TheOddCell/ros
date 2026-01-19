@@ -1,0 +1,36 @@
+#!/bin/sh
+# Inspired by https://github.com/nix-community/comma
+if ! command -v ros >/dev/null 2>&1; then
+  echo "error: no ros"
+  exit 1
+fi
+
+case "$1" in
+  -h|--help)
+    curl cht.sh/,
+    ;;
+  -e|--empty-cache)
+    exec ros gc
+    ;;
+  -s|--shell)
+    [ -n "$2" ] || {
+      echo "error: missing command for $1" >&2
+      exit 1
+    }
+
+    tmpdir="$(mktemp -d)" || exit 1
+    trap 'rm -rf "$tmpdir"' EXIT INT TERM
+
+    ros d "$2" || exit 1
+
+    cp "$HOME/.odd/static/$2" "$tmpdir/" || exit 1
+
+    PATH="$tmpdir:$PATH"
+    export PATH
+
+    exec "${SHELL:-/bin/sh}"
+    ;;
+esac
+
+exec ros r "$@"
+
