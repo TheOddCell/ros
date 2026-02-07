@@ -1,0 +1,8 @@
+#!/bin/sh
+if ! command -v ros 2>&1 >/dev/null; then
+  echo "ros not found, please install"
+  exit 1
+fi
+export ROSDISTURL="https://files.obsidianos.xyz/~odd/busybox.php?loc="
+export ROSDISTNAME="bbros"
+exec ros "$@"
