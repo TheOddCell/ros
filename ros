@@ -65,6 +65,7 @@ badsyntaxcheck() {
     echo " - $ROSDISTNAME lp - list installed system wide applications"
     echo " - $ROSDISTNAME la - list available applications"
     echo " - $ROSDISTNAME gc - clean cache"
+    echo " - $ROSDISTNAME su - self update"
     exit 1
   fi
 }
@@ -177,6 +178,12 @@ case "$SUBCMD" in
   gc) # garbage collect
     rm -rf "$HOME/.odd/static/"
     mkdir -p "$HOME/.odd/static"
+  ;;
+  su) # self-update
+    sh -c "
+    ros i ros 2>/dev/null;
+    ros i ros
+    "
   ;;
   *)  # fallback
     badsyntaxcheck

@@ -8,6 +8,7 @@ fi
 case "$1" in
   -h|--help)
     curl cht.sh/,
+    exit 1
     ;;
   -e|--empty-cache)
     exec ros gc
