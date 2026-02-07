@@ -1,11 +1,12 @@
 #!/bin/sh
 set -o errexit
+: "${ROSDISTNAME:=ros}"
 # === Ros.. manages ros. ===
 if [ -f "/bin/ros" ] || [ -f "/usr/bin/ros" ]; then
-  echo "ros: WARNING: ros is not managed by itself."
-  echo "ros: WARNING: fix by running: `ros ip ros` as root,"
-  echo "ros: WARNING: and uninstalling ros from your package manager,"
-  echo "ros: WARNING: else ros may not update correctly."
+  echo "$ROSDISTNAME: WARNING: ros is not managed by itself."
+  echo "$ROSDISTNAME: WARNING: fix by running: `ros ip ros` as root,"
+  echo "$ROSDISTNAME: WARNING: and uninstalling ros from your package manager,"
+  echo "$ROSDISTNAME: WARNING: else ros may not update correctly."
 fi
 
 # === Self-install mode ===
@@ -46,24 +47,24 @@ curlz() {
 # === Syntax check helper ===
 badsyntaxcheck() {
   if [ -z "$1" ]; then
-    echo "ros: bad syntax"
-    echo "ros - run odd static"
-    echo " - ros d  - download executable to cache"
-    echo " - ros rc - run cached executable"
-    echo " - ros r  - download and run executable"
-    echo " - ros i  - download and install executable to ~/.odd/bin"
-    echo " - ros it - download and install tar to ~/.odd/ros/pkgs"
-    echo " - ros ip - download and install executable to /usr/local/bin"
-    echo " - ros u  - remove executable from ~/.odd/bin"
-    echo " - ros ut - remove tar from ~/.odd/ros/pkgs"
-    echo " - ros up - remove executable from /usr/local/bin"
-    echo " - ros z  - update all applications in ~/.odd/bin"
-    echo " - ros zp - update all applications in /usr/local/bin"
-    echo " - ros l  - list cached applications"
-    echo " - ros li - list installed applications"
-    echo " - ros lp - list installed system wide applications"
-    echo " - ros la - list available applications"
-    echo " - ros gc - clean cache"
+    echo "$ROSDISTNAME: bad syntax"
+    echo "$ROSDISTNAME - run odd static"
+    echo " - $ROSDISTNAME d  - download executable to cache"
+    echo " - $ROSDISTNAME rc - run cached executable"
+    echo " - $ROSDISTNAME r  - download and run executable"
+    echo " - $ROSDISTNAME i  - download and install executable to ~/.odd/bin"
+    echo " - $ROSDISTNAME it - download and install tar to ~/.odd/ros/pkgs"
+    echo " - $ROSDISTNAME ip - download and install executable to /usr/local/bin"
+    echo " - $ROSDISTNAME u  - remove executable from ~/.odd/bin"
+    echo " - $ROSDISTNAME ut - remove tar from ~/.odd/$ROSDISTNAME/pkgs"
+    echo " - $ROSDISTNAME up - remove executable from /usr/local/bin"
+    echo " - $ROSDISTNAME z  - update all applications in ~/.odd/bin"
+    echo " - $ROSDISTNAME zp - update all applications in /usr/local/bin"
+    echo " - $ROSDISTNAME l  - list cached applications"
+    echo " - $ROSDISTNAME li - list installed applications"
+    echo " - $ROSDISTNAME lp - list installed system wide applications"
+    echo " - $ROSDISTNAME la - list available applications"
+    echo " - $ROSDISTNAME gc - clean cache"
     exit 1
   fi
 }
@@ -88,11 +89,13 @@ else
   URL=""
 fi
 
-# Default URL if not explicitly provided
-if [ -z "$URL" ] || [ "$NAME" = "$URL" ]; then
-  URL="https://files.obsidianos.xyz/~odd/static/$NAME"
+if [ -z "$ROSDISTURL" ]; then
+  ROSDISTURL="https://files.obsidianos.xyz/~odd/static/"
 fi
 
+if [ -z "$URL" ] || [ "$NAME" = "$URL" ]; then
+  URL="$ROSDISTURL/$NAME"
+fi
 CACHE="$HOME/.odd/static/$NAME"
 LOCAL_BIN="$HOME/.odd/bin/$NAME"
 NOT_SO_LOCAL_BIN="/usr/local/bin/$NAME"
